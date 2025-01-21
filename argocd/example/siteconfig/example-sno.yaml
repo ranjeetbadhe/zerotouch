@@ -6,11 +6,11 @@ metadata:
   name: "example-sno"
   namespace: "example-sno"
 spec:
-  baseDomain: "example.com"
+  baseDomain: "ocpran.com"
   pullSecretRef:
-    name: "assisted-deployment-pull-secret"
-  clusterImageSetNameRef: "openshift-4.16"
-  sshPublicKey: "ssh-rsa AAAA..."
+    name: "pull-secret"
+  clusterImageSetNameRef: "img4.17.7-x86-64-appsub"
+  sshPublicKey: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCnGdbHlyK3+7K/2gdWTaov6hMz/wHlCy0gnad/r0lAb0ziFloZ8jG3VyTFpB7COnOULjq8nCznLjE1tKvgSRlFh/hvi+HNXE2C7q/MkIWzzAxRcPOLVJz9P6f0HvOA3rekVt81eOf/NAoRqoJ1qUod8pDDd7zWGIINOCDSROGTQzHYD77EJ0g7JX1ctzT1Rnn4BmPPoffNyqFAy0LlhLTRcZ3FSwm1gMH18d1QniBHYPYRfNM2L//cRzgqwdrXVjLVTtgOoNyzta+IQzLod0Zbr0IEPvZyyljAuSlupmcocj6bSNDe95ThuKpY0pYBH3l/cOoe3N300j+ETGhmTVs7Xq6sWIJrt/BRyl7Lkg3dyt0s9t5wNm5pNitHXHjmGC53m8NLTev0ceGzxLnoe4+8/Aes9keX92lELAEqZorNKVwtFvnKhIFD3tGzfQN5o9qb8QoxqNTmGNTffEXpNPK6fvME3HT6/JXOcgyiTUGrHoBLlOLfw2vMARAOzK8kLnc= root@bastion500.ocpran.com"
   clusters:
   - clusterName: "example-sno"
     networkType: "OVNKubernetes"
@@ -38,24 +38,24 @@ spec:
     # extraManifestPath: sno-extra-manifest
     clusterLabels:
       # These example cluster labels correspond to the bindingRules in the PolicyGenTemplate examples
-      du-profile: "latest"
+      #      du-profile: "latest"
       # These example cluster labels correspond to the bindingRules in the PolicyGenTemplate examples in ../policygentemplates:
       # ../policygentemplates/common-ranGen.yaml will apply to all clusters with 'common: true'
-      common: true
+      #      common: true
       # ../policygentemplates/group-du-sno-ranGen.yaml will apply to all clusters with 'group-du-sno: ""'
-      group-du-sno: ""
+      #      group-du-sno: ""
       # ../policygentemplates/example-sno-site.yaml will apply to all clusters with 'sites: "example-sno"'
       # Normally this should match or contain the cluster name so it only applies to a single cluster
-      sites : "example-sno"
+      #sites : "example-sno"
     clusterNetwork:
-      - cidr: 1001:1::/48
-        hostPrefix: 64
+      - cidr: 10.128.0.0/14
+        hostPrefix: 23
     machineNetwork:
-      - cidr: 1111:2222:3333:4444::/64
+      - cidr: 192.168.0.0/24
     serviceNetwork:
-      - 1001:2::/112
-    additionalNTPSources:
-      - 1111:2222:3333:4444::2
+      - 172.30.0.0/16
+  #  additionalNTPSources:
+   #   - 1111:2222:3333:4444::2
     # Initiates the cluster for workload partitioning. Setting specific reserved/isolated CPUSets is done via PolicyTemplate
     # please see Workload Partitioning Feature for a complete guide.
     cpuPartitioningMode: AllNodes
@@ -63,90 +63,48 @@ spec:
     #crTemplates:
     #  KlusterletAddonConfig: "KlusterletAddonConfigOverride.yaml"
     nodes:
-      - hostName: "example-node1.example.com"
+      - hostName: "example-node1.ocpran.com"
         role: "master"
         # Optionally; This can be used to configure desired BIOS setting on a host:
         #biosConfigRef:
         #  filePath: "example-hw.profile"
-        bmcAddress: "idrac-virtualmedia+https://[1111:2222:3333:4444::bbbb:1]/redfish/v1/Systems/System.Embedded.1"
+        bmcAddress: "redfish-virtualmedia+https://192.168.0.15/redfish/v1/Systems/1/"
         bmcCredentialsName:
-          name: "example-node1-bmh-secret"
-        bootMACAddress: "AA:BB:CC:DD:EE:11"
+          name: "bmc-secret"
+        bootMACAddress: "ec:eb:b8:9c:f4:b0"
         # Use UEFISecureBoot to enable secure boot, UEFI to disable.
         bootMode: "UEFISecureBoot"
-        rootDeviceHints:
-          deviceName: "/dev/disk/by-path/pci-0000:01:00.0-scsi-0:2:0:0"
+      #  rootDeviceHints:
+       #   deviceName: "/dev/disk/by-path/pci-0000:01:00.0-scsi-0:2:0:0"
         # disk partition at `/var/lib/containers` with ignitionConfigOverride. Some values must be updated. See DiskPartitionContainer.md for more details
-        ignitionConfigOverride: |
-          {
-            "ignition": {
-              "version": "3.2.0"
-            },
-            "storage": {
-              "disks": [
-                {
-                  "device": "/dev/disk/by-id/wwn-0x6b07b250ebb9d0002a33509f24af1f62",
-                  "partitions": [
-                    {
-                      "label": "var-lib-containers",
-                      "sizeMiB": 0,
-                      "startMiB": 250000
-                    }
-                  ],
-                  "wipeTable": false
-                }
-              ],
-              "filesystems": [
-                {
-                  "device": "/dev/disk/by-partlabel/var-lib-containers",
-                  "format": "xfs",
-                  "mountOptions": [
-                    "defaults",
-                    "prjquota"
-                  ],
-                  "path": "/var/lib/containers",
-                  "wipeFilesystem": true
-                }
-              ]
-            },
-            "systemd": {
-              "units": [
-                {
-                  "contents": "# Generated by Butane\n[Unit]\nRequires=systemd-fsck@dev-disk-by\\x2dpartlabel-var\\x2dlib\\x2dcontainers.service\nAfter=systemd-fsck@dev-disk-by\\x2dpartlabel-var\\x2dlib\\x2dcontainers.service\n\n[Mount]\nWhere=/var/lib/containers\nWhat=/dev/disk/by-partlabel/var-lib-containers\nType=xfs\nOptions=defaults,prjquota\n\n[Install]\nRequiredBy=local-fs.target",
-                  "enabled": true,
-                  "name": "var-lib-containers.mount"
-                }
-              ]
-            }
-          }
         nodeNetwork:
           interfaces:
             - name: eno1
-              macAddress: "AA:BB:CC:DD:EE:11"
+              macAddress: "ec:eb:b8:9c:f4:b0"
           config:
             interfaces:
               - name: eno1
                 type: ethernet
                 state: up
                 ipv4:
-                  enabled: false
-                ipv6:
                   enabled: true
+                ipv6:
+                  enabled: false
                   address:
                   # For SNO sites with static IP addresses, the node-specific,
                   # API and Ingress IPs should all be the same and configured on
                   # the interface
-                  - ip: 1111:2222:3333:4444::aaaa:1
-                    prefix-length: 64
+                  - ip: 192.168.0.140
+                    prefix-length: 24
             dns-resolver:
               config:
                 search:
-                - example.com
+                - ocpran.com
                 server:
-                - 1111:2222:3333:4444::2
+                - 192.168.0.149
             routes:
               config:
-              - destination: ::/0
+              - destination: 0.0.0.0/0
                 next-hop-interface: eno1
-                next-hop-address: 1111:2222:3333:4444::1
+                next-hop-address: 192.168.0.1
                 table-id: 254
