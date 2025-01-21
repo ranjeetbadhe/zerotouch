@@ -58,7 +58,7 @@ spec:
    #   - 1111:2222:3333:4444::2
     # Initiates the cluster for workload partitioning. Setting specific reserved/isolated CPUSets is done via PolicyTemplate
     # please see Workload Partitioning Feature for a complete guide.
-    cpuPartitioningMode: AllNodes
+    # cpuPartitioningMode: AllNodes
     # Optionally; This can be used to override the KlusterletAddonConfig that is created for this cluster:
     #crTemplates:
     #  KlusterletAddonConfig: "KlusterletAddonConfigOverride.yaml"
