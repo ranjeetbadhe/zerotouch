@@ -3,5 +3,5 @@ kind: Kustomization
 
 generators:
 - example-sno.yaml
-  #- example-3node.yaml
+  #- example-3node.yaml        we have taken 1 file 
   #- example-standard.yaml
